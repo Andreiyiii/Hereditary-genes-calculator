@@ -83,7 +83,7 @@ def main():
 
     # Ensure probabilities sum to 1
 
-    ####normalize(probabilities)
+    normalize(probabilities)
 
     # Print results
     for person in people:
@@ -134,39 +134,64 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         if people[person]["mother"] ==None and people[person]["father"] ==None: 
             if person in no_gene:
                 if person in have_trait:
-                    no_gene_prob=PROBS["gene"][0]*PROBS["trait"][0][True]
+                    gene_prob=PROBS["gene"][0]*PROBS["trait"][0][True]
                 else:
-                    no_gene_prob=PROBS["gene"][0]*PROBS["trait"][0][False]
-                probability*=no_gene_prob
+                    gene_prob=PROBS["gene"][0]*PROBS["trait"][0][False]
 
-            if person in one_gene:
-                if person in have_trait:
-                    one_gene_prob=PROBS["gene"][1]*PROBS["trait"][0][True]
-                else:
-                    one_gene_prob=PROBS["gene"][1]*PROBS["trait"][0][False]
-                probability*=one_gene_prob
 
-            if person in two_genes:
+            elif person in one_gene:
                 if person in have_trait:
-                    two_gene_prob=PROBS["gene"][2]*PROBS["trait"][0][True]
+                    gene_prob=PROBS["gene"][1]*PROBS["trait"][1][True]
                 else:
-                    two_gene_prob=PROBS["gene"][2]*PROBS["trait"][0][False]            
-                probability*=two_gene_prob
+                    gene_prob=PROBS["gene"][1]*PROBS["trait"][1][False]
+
+
+            elif person in two_genes:
+                if person in have_trait:
+                    gene_prob=PROBS["gene"][2]*PROBS["trait"][2][True]
+                else:
+                    gene_prob=PROBS["gene"][2]*PROBS["trait"][2][False]     
+
+            probability*=gene_prob
 
         else:
             child_probability=1
-            mother_probability=1
-            father_probability=1
-            if people[person]["mother"] in no_gene:
-                if person in have_trait:
-                     mother_probability=mother_probability*PROBS["trait"][0][False]*PROBS["mutation"]
-                else:
-                    no_gene_prob=PROBS["gene"][0]*PROBS["trait"][0][False]
-                
+            mother_probability=prob_get_gene_from_parent(people[person]["mother"],one_gene,two_genes)
+            father_probability=prob_get_gene_from_parent(people[person]["father"],one_gene,two_genes)
 
+            if person in no_gene:
+                child_probability*=(1-mother_probability)*(1-father_probability)
+                if person in have_trait:
+                    child_probability*=PROBS["trait"][0][True]
+                else:
+                    child_probability*=PROBS["trait"][0][False]
+
+            elif person in one_gene:
+                child_probability=(mother_probability*(1-father_probability)+(1-mother_probability)*father_probability)
+                if person in have_trait:
+                    child_probability*=PROBS["trait"][1][True]
+                else:
+                    child_probability*=PROBS["trait"][1][False]
+            elif person in two_genes:
+                child_probability=mother_probability*father_probability
+                if person in have_trait:
+                    child_probability*=PROBS["trait"][2][True]
+                else:
+                    child_probability*=PROBS["trait"][2][False]
+
+ 
+            probability*=child_probability
 
     return probability
     raise NotImplementedError
+
+def prob_get_gene_from_parent(parent,one_gene,two_genes):
+    if parent in two_genes:
+        return 1-PROBS["mutation"]
+    elif parent in one_gene:
+        return 0.5
+    else:
+        return PROBS["mutation"]
 
 
 def update(probabilities, one_gene, two_genes, have_trait, p):
@@ -186,8 +211,13 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
 
 
 def normalize(probabilities):
+    for person,aspects in probabilities.items():
+        for aspect,values in aspects.items():
+            max_value=sum(values.values())
+            for key,value in values.items():
+                values[key]=value/max_value*1
 
-    raise NotImplementedError
+
 
 
 if __name__ == "__main__":
