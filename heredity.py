@@ -133,59 +133,54 @@ def joint_probability(people, one_gene, two_genes, have_trait):
     for person in people:
         if people[person]["mother"] ==None and people[person]["father"] ==None: 
             if person in no_gene:
-                if person in have_trait:
-                    gene_prob=PROBS["gene"][0]*PROBS["trait"][0][True]
-                else:
-                    gene_prob=PROBS["gene"][0]*PROBS["trait"][0][False]
-
+                trait_prob=prob_get_trait(person,PROBS["gene"][0],PROBS["trait"][0],have_trait)
 
             elif person in one_gene:
-                if person in have_trait:
-                    gene_prob=PROBS["gene"][1]*PROBS["trait"][1][True]
-                else:
-                    gene_prob=PROBS["gene"][1]*PROBS["trait"][1][False]
-
+                trait_prob=prob_get_trait(person,PROBS["gene"][1],PROBS["trait"][1],have_trait)
 
             elif person in two_genes:
-                if person in have_trait:
-                    gene_prob=PROBS["gene"][2]*PROBS["trait"][2][True]
-                else:
-                    gene_prob=PROBS["gene"][2]*PROBS["trait"][2][False]     
+                trait_prob=prob_get_trait(person,PROBS["gene"][2],PROBS["trait"][2],have_trait)   
 
-            probability*=gene_prob
+            probability*=trait_prob
 
         else:
-            child_probability=1
+            child_gene_probability=1
             mother_probability=prob_get_gene_from_parent(people[person]["mother"],one_gene,two_genes)
             father_probability=prob_get_gene_from_parent(people[person]["father"],one_gene,two_genes)
 
             if person in no_gene:
-                child_probability*=(1-mother_probability)*(1-father_probability)
-                if person in have_trait:
-                    child_probability*=PROBS["trait"][0][True]
-                else:
-                    child_probability*=PROBS["trait"][0][False]
+                child_gene_probability*=(1-mother_probability)*(1-father_probability)
+                trait_prob=prob_get_trait(person,child_gene_probability,PROBS["trait"][0],have_trait)
 
             elif person in one_gene:
-                child_probability=(mother_probability*(1-father_probability)+(1-mother_probability)*father_probability)
-                if person in have_trait:
-                    child_probability*=PROBS["trait"][1][True]
-                else:
-                    child_probability*=PROBS["trait"][1][False]
+                child_gene_probability=(mother_probability*(1-father_probability)+(1-mother_probability)*father_probability)
+                trait_prob=prob_get_trait(person,child_gene_probability,PROBS["trait"][1],have_trait)
+
             elif person in two_genes:
-                child_probability=mother_probability*father_probability
-                if person in have_trait:
-                    child_probability*=PROBS["trait"][2][True]
-                else:
-                    child_probability*=PROBS["trait"][2][False]
+                child_gene_probability=mother_probability*father_probability
+                trait_prob=prob_get_trait(person,child_gene_probability,PROBS["trait"][2],have_trait)
 
  
-            probability*=child_probability
+            probability*=trait_prob
 
     return probability
     raise NotImplementedError
+def prob_get_trait(person,gene_probability,trait_probability,have_trait):
+    '''
+    After receiving the person and his gene probability ,it returns the full probability of him having or not having the trait
+    '''
+    if person in have_trait:
+        prob=gene_probability*trait_probability[True]
+    else:
+        prob=gene_probability*trait_probability[False]
+    return prob
+
+
 
 def prob_get_gene_from_parent(parent,one_gene,two_genes):
+    '''
+    Returns the probability of a parent to transmit the gene to his child
+    '''
     if parent in two_genes:
         return 1-PROBS["mutation"]
     elif parent in one_gene:
